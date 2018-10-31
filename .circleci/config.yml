@@ -6,7 +6,7 @@ jobs:
     - image: circleci/openjdk:8-jdk-browsers
     steps:
     - checkout
-        path: ~/spring-boot-examples
+      path: ~/spring-boot-examples
     - restore_cache:
         key: dep-cache-{{ checksum "pom.xml" }}
     - run: mvn dependency:go-offline
