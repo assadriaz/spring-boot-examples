@@ -21,7 +21,7 @@ jobs:
     machine: true
     steps:
     - run:
-        name: Clone docs
+        name: Clone demo
         working_directory: ~/workdir
         command: |
           git clone --depth 1 https://github.com/assadriaz/demo.git
