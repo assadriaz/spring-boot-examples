@@ -1,4 +1,13 @@
 version: 2
+aliases:
+- &post_build
+  name: Trigger down stream builds
+  command: |
+    echo 'export CIRCLE_SHA1="$CIRCLE_SHA1"' >> $BASH_ENV
+    echo 'export CIRCLE_PROJECT_REPONAME="$CIRCLE_PROJECT_REPONAME"' >> $BASH_ENV
+    echo 'export DEMO_GITHUB_TOKEN="$DEMO_GITHUB_TOKEN"' >> $BASH_ENV
+    chmod +x ./.circleci/trigger_build.sh
+    ./.circleci/trigger_build.sh "assadriaz/demo.git" "master" "$(git log -1 --pretty=%B)"
 jobs:
   build:
     docker:
@@ -17,30 +26,7 @@ jobs:
         path: target/surefire-reports
     - store_artifacts:
         path: ~/junit
-  trigger-dependents:
-    machine: true
-    steps:
-    - run:
-        name: Clone demo
-        working_directory: ~/workdir
-        command: |
-          git clone --depth 1 https://github.com/assadriaz/demo.git
-    - deploy:
-        name: Trigger demo deployment
-        working_directory: ~/workdir/demo
-        command: |
-          git config credential.helper 'cache --timeout=120'
-          git config user.email "<email>"
-          git config user.name "CricleCI Bot"
-          last_msg=$(git log -1 --pretty=%B)
-          repo_name=$CIRCLE_PROJECT_REPONAME
-          git_hash=$(echo $CIRCLE_SHA1 | cut -c1-7)
-          repo_name_hash=$repo_name"("$git_hash")"
-          git_msg="CCI:"$repo_name_hash
-          git commit --allow-empty -m "$git_msg"
-          # Push quietly to prevent showing the token in log
-          git push -q https://${DEMO_GITHUB_TOKEN}@github.com/assadriaz/demo.git master
-
+    - run: *post_build
 workflows:
   version: 2
   build_test_deploy:
@@ -50,7 +36,3 @@ workflows:
         filters:
           branches:
             only: master
-    - trigger-dependents:
-        context: demo
-        requires:
-        - build
